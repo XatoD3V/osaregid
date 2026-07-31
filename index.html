@@ -902,8 +902,52 @@ function showGuideToast(){
   toast('Guía paso a paso enviada en el chat de Claude ↴', 'info');
 }
 
-/* ================= Arranque ================= */
-render();
+/* ================= ARRANQUE CON SUPABASE AUTOMÁTICO ================= */
+
+// 🔑 CAMBIA ESTOS VALORES POR LOS TUYOS
+const SUPABASE_URL = 'https://dffxiyabfhpczyyiydtt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Mm1LxAroi0uf8JMScGZe1g_Cp-COz5d';
+
+(async function initApp() {
+    // Si no hay datos de demo, sembrar
+    if (state.records.length === 0) seedDemoData();
+    
+    // Intentar conectar automáticamente
+    if (SUPABASE_URL && SUPABASE_KEY && SUPABASE_URL !== 'https://tuproyecto.supabase.co') {
+        state.supabaseUrl = SUPABASE_URL;
+        state.supabaseKey = SUPABASE_KEY;
+        
+        const loaded = await loadSupabaseSDK();
+        if (loaded && window.supabase) {
+            try {
+                state.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                const {data, error} = await state.supabase.from('registros').select('*').limit(1);
+                if (!error) {
+                    state.supabaseReady = true;
+                    await fetchAllFromSupabase();
+                    subscribeRealtime();
+                    console.log('✅ Conectado a Supabase automáticamente');
+                    // Actualizar estado de autenticación si no está logueado
+                    if (!state.authed) {
+                        state.authed = true;
+                    }
+                    render();
+                    toast('🌐 Conectado a Supabase - Datos compartidos en tiempo real', 'ok');
+                    return;
+                }
+            } catch(e) {
+                console.warn('⚠️ No se pudo conectar a Supabase:', e.message);
+            }
+        }
+    }
+    
+    // Si no hay conexión, iniciar en modo local
+    render();
+    if (!state.authed) {
+        // Mostrar login
+    }
+    toast('📁 Modo local - Los datos no se comparten entre equipos', 'info');
+})();
 </script>
 </body>
 </html>
