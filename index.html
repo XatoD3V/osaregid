@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>BioSync UE305</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#080c18;
+    --bg-1:#0d1326;
+    --glass:rgba(255,255,255,.055);
+    --glass-strong:rgba(255,255,255,.09);
+    --glass-border:rgba(255,255,255,.14);
+    --glass-border-soft:rgba(255,255,255,.08);
+    --cyan:#5EEAD4;
+    --violet:#A78BFA;
+    --gold:#F5C451;
+    --danger:#F1666B;
+    --text-0:#F3F5F9;
+    --text-1:#B9C2D6;
+    --text-2:#7C8AA6;
+    --radius-lg:22px;
+    --radius-md:14px;
+    --radius-sm:9px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'Inter', sans-serif;
+    color:var(--text-0);
+    background:var(--bg-0);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  .display{font-family:'Sora', sans-serif;}
+  .mono{font-family:'JetBrains Mono', monospace;}
+
+  /* ---------- Aurora background ---------- */
+  .aurora{
+    position:fixed; inset:0; z-index:0; overflow:hidden;
+    background:radial-gradient(120% 120% at 50% 0%, #101833 0%, #080c18 60%);
+  }
+  .blob{
+    position:absolute; border-radius:50%; filter:blur(90px); opacity:.35;
+    animation:drift 26s ease-in-out infinite alternate;
+  }
+  .blob1{width:520px;height:520px; background:var(--cyan); top:-160px; left:-120px;}
+  .blob2{width:460px;height:460px; background:var(--violet); bottom:-140px; right:-100px; animation-delay:-8s;}
+  .blob3{width:360px;height:360px; background:var(--gold); top:40%; left:60%; opacity:.18; animation-delay:-14s;}
+  @keyframes drift{
+    0%{transform:translate(0,0) scale(1);}
+    100%{transform:translate(40px,60px) scale(1.12);}
+  }
+  @media (prefers-reduced-motion: reduce){ .blob{animation:none;} }
+
+  .app-shell{position:relative; z-index:1; min-height:100vh; display:flex; flex-direction:column;}
+
+  /* ---------- Glass primitives ---------- */
+  .glass{
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    border-radius:var(--radius-lg);
+    backdrop-filter:blur(22px) saturate(140%);
+    -webkit-backdrop-filter:blur(22px) saturate(140%);
+    box-shadow:0 8px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+  .glass-soft{
+    background:rgba(255,255,255,.035);
+    border:1px solid var(--glass-border-soft);
+    border-radius:var(--radius-md);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+  }
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'Inter'; font-weight:600; font-size:13.5px;
+    padding:10px 16px; border-radius:12px; border:1px solid var(--glass-border);
+    background:var(--glass-strong); color:var(--text-0); cursor:pointer;
+    transition:transform .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .btn:hover{ background:rgba(255,255,255,.14); transform:translateY(-1px); }
+  .btn:active{ transform:translateY(0); }
+  .btn svg{width:16px;height:16px;flex-shrink:0;}
+  .btn-primary{ background:linear-gradient(135deg, var(--cyan), var(--violet)); color:#0a0f1e; border:none; }
+  .btn-primary:hover{ filter:brightness(1.08); }
+  .btn-gold{ background:linear-gradient(135deg,#F5C451,#F0A94E); color:#241705; border:none; }
+  .btn-danger{ background:rgba(241,102,107,.15); border-color:rgba(241,102,107,.4); color:#FFC7C9; }
+  .btn-danger:hover{ background:rgba(241,102,107,.25); }
+  .btn-ghost{ background:transparent; border-color:var(--glass-border-soft); }
+  .btn-sm{ padding:7px 11px; font-size:12.5px; border-radius:9px; }
+  .btn:disabled{ opacity:.45; cursor:not-allowed; transform:none; }
+
+  input, select{
+    font-family:'Inter'; font-size:14px; color:var(--text-0);
+    background:rgba(255,255,255,.05); border:1px solid var(--glass-border-soft);
+    border-radius:10px; padding:10px 12px; outline:none; width:100%;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  input::placeholder{ color:var(--text-2); }
+  input:focus, select:focus{ border-color:var(--cyan); background:rgba(255,255,255,.08); }
+  label{ font-size:12px; color:var(--text-2); font-weight:600; letter-spacing:.03em; text-transform:uppercase; display:block; margin-bottom:6px; }
+
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.15); border-radius:8px; }
+
+  /* ---------- Login ---------- */
+  .login-wrap{ flex:1; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .login-card{ width:380px; padding:38px 34px; text-align:center; }
+  .brand-ring{
+    width:64px; height:64px; margin:0 auto 18px; position:relative;
+  }
+  .brand-ring svg{ width:100%; height:100%; }
+  .brand-ring .ring-spin{ animation:spin 9s linear infinite; transform-origin:center; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){ .ring-spin{ animation:none; } }
+  .brand-title{ font-size:22px; font-weight:800; letter-spacing:-.01em; }
+  .brand-sub{ font-size:12.5px; color:var(--text-2); margin-top:4px; letter-spacing:.04em; text-transform:uppercase; }
+  .login-form{ margin-top:28px; display:flex; flex-direction:column; gap:14px; text-align:left; }
+  .login-error{ color:#FFC7C9; font-size:13px; background:rgba(241,102,107,.12); border:1px solid rgba(241,102,107,.3); border-radius:10px; padding:9px 12px; display:none; }
+  .login-error.show{ display:block; }
+  .login-hint{ margin-top:18px; font-size:11.5px; color:var(--text-2); line-height:1.6; }
+
+  /* ---------- Header ---------- */
+  header.topbar{
+    position:sticky; top:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px; padding:14px 26px; margin:14px 18px 0;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand .brand-ring{ width:38px; height:38px; margin:0; }
+  .brand-text .brand-title{ font-size:16px; }
+  .brand-text .brand-sub{ font-size:9.5px; margin-top:1px; }
+  .status-dot{ width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:6px; }
+  .status-dot.online{ background:var(--cyan); box-shadow:0 0 8px var(--cyan); }
+  .status-dot.offline{ background:var(--text-2); }
+  .status-pill{ display:flex; align-items:center; font-size:12px; color:var(--text-1); padding:7px 12px; border-radius:20px; }
+  .topbar-actions{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+
+  main.content{ flex:1; padding:20px 18px 60px; max-width:1280px; margin:0 auto; width:100%; }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{ display:flex; gap:14px; flex-wrap:wrap; align-items:center; padding:16px 18px; margin-bottom:18px; }
+  .search-box{ flex:1; min-width:240px; position:relative; }
+  .search-box svg{ position:absolute; left:13px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:var(--text-2); }
+  .search-box input{ padding-left:38px; }
+  .toolbar-count{ font-size:12.5px; color:var(--text-2); white-space:nowrap; }
+
+  /* ---------- Table / cards ---------- */
+  .records-panel{ padding:8px; overflow:hidden; }
+  table{ width:100%; border-collapse:collapse; }
+  thead th{
+    text-align:left; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--text-2); font-weight:700; padding:14px 16px; border-bottom:1px solid var(--glass-border-soft);
+  }
+  tbody td{ padding:14px 16px; font-size:13.5px; border-bottom:1px solid rgba(255,255,255,.045); vertical-align:middle; }
+  tbody tr{ transition:background .15s ease; }
+  tbody tr:hover{ background:rgba(255,255,255,.03); }
+  .name-cell .full-name{ font-weight:600; color:var(--text-0); }
+  .name-cell .sub{ font-size:11.5px; color:var(--text-2); margin-top:2px; }
+  .phone-chip{
+    display:inline-flex; align-items:center; gap:6px; font-size:12.5px;
+    background:rgba(94,234,212,.1); border:1px solid rgba(94,234,212,.25);
+    color:var(--cyan); padding:5px 10px; border-radius:20px;
+  }
+  .phone-count{ font-size:11px; color:var(--text-2); margin-left:6px; }
+  .row-actions{ display:flex; gap:8px; justify-content:flex-end; }
+  .icon-btn{
+    width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+    border-radius:9px; background:rgba(255,255,255,.05); border:1px solid var(--glass-border-soft);
+    cursor:pointer; color:var(--text-1); transition:.15s;
+  }
+  .icon-btn:hover{ background:rgba(255,255,255,.12); color:var(--text-0); }
+  .icon-btn svg{ width:15px; height:15px; }
+
+  .empty-state{ text-align:center; padding:60px 20px; color:var(--text-2); }
+  .empty-state svg{ width:44px; height:44px; margin-bottom:14px; opacity:.5; }
+  .empty-state .t1{ color:var(--text-1); font-weight:600; margin-bottom:4px; }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(4,6,14,.6); backdrop-filter:blur(4px);
+    display:none; align-items:flex-start; justify-content:center; z-index:100; padding:40px 16px; overflow-y:auto;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal{ width:100%; max-width:560px; padding:26px; margin-bottom:40px; }
+  .modal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .modal-title{ font-size:17px; font-weight:700; display:flex; align-items:center; gap:10px; }
+  .modal-title svg{ width:20px; height:20px; color:var(--cyan); }
+  .field-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; }
+  .field-full{ grid-column:1 / -1; }
+  .section-label{ font-size:11px; color:var(--text-2); text-transform:uppercase; letter-spacing:.06em; font-weight:700; margin:20px 0 10px; display:flex; align-items:center; gap:8px; }
+  .section-label svg{ width:14px;height:14px; }
+  .phone-row{ display:flex; align-items:center; gap:8px; padding:10px 12px; border-radius:11px; background:rgba(255,255,255,.03); border:1px solid var(--glass-border-soft); margin-bottom:8px; }
+  .phone-row input{ flex:1; }
+  .badge{ font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:20px; white-space:nowrap; }
+  .badge-active{ background:rgba(94,234,212,.15); color:var(--cyan); border:1px solid rgba(94,234,212,.3); }
+  .badge-hist{ background:rgba(255,255,255,.06); color:var(--text-2); border:1px solid var(--glass-border-soft); }
+  .modal-footer{ display:flex; justify-content:space-between; align-items:center; margin-top:22px; gap:10px; flex-wrap:wrap; }
+  .custom-field-row{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+
+  /* ---------- Toast ---------- */
+  .toast-wrap{ position:fixed; bottom:22px; right:22px; z-index:200; display:flex; flex-direction:column; gap:10px; }
+  .toast{ padding:12px 18px; border-radius:12px; font-size:13.5px; font-weight:500; display:flex; align-items:center; gap:10px; animation:toastIn .25s ease; min-width:220px; }
+  @keyframes toastIn{ from{ opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+  .toast svg{ width:16px; height:16px; flex-shrink:0; }
+  .toast.ok{ background:rgba(94,234,212,.12); border:1px solid rgba(94,234,212,.3); color:var(--cyan); }
+  .toast.err{ background:rgba(241,102,107,.14); border:1px solid rgba(241,102,107,.35); color:#FFC7C9; }
+  .toast.info{ background:rgba(167,139,250,.12); border:1px solid rgba(167,139,250,.32); color:var(--violet); }
+
+  .hidden{ display:none !important; }
+  footer.app-footer{ text-align:center; padding:18px; font-size:11px; color:var(--text-2); }
+
+  @media(max-width:720px){
+    .field-grid{ grid-template-columns:1fr; }
+    table thead{ display:none; }
+    table, tbody, tr, td{ display:block; width:100%; }
+    tbody tr{ border-bottom:1px solid var(--glass-border-soft); padding:10px 6px; }
+    tbody td{ border:none; padding:4px 10px; display:flex; justify-content:space-between; gap:10px; }
+    tbody td::before{ content:attr(data-label); color:var(--text-2); font-size:11px; text-transform:uppercase; }
+    .row-actions{ justify-content:flex-start; padding-top:8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="aurora"><div class="blob blob1"></div><div class="blob blob2"></div><div class="blob blob3"></div></div>
+
+<div class="app-shell" id="appShell"></div>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+/* =========================================================================
+   BioSync UE305 — Sistema de acceso a información de identidad
+   Vanilla JS, sin frameworks. Persistencia opcional vía Supabase.
+   ========================================================================= */
+
+/* ---------------- Iconos (SVG minimalista, stroke 1.8) ---------------- */
+const ICONS = {
+  search:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>`,
+  user:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  phone:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.4 2.1L8.1 9.7a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.9 2Z"/></svg>`,
+  edit:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+  trash:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>`,
+  plus:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`,
+  upload:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>`,
+  settings:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`,
+  close:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>`,
+  check:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`,
+  history:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l4 2"/></svg>`,
+  logout:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>`,
+  lock:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  idcard:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="12" r="2"/><path d="M14 10h6M14 14h6M6 17h4"/></svg>`,
+  cloudOk:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10Z"/></svg>`,
+  layers:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
+  inbox:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>`,
+};
+const ic = (name, cls='') => `<span class="${cls}" style="display:inline-flex">${ICONS[name]||''}</span>`;
+
+/* ---------------- Estado global ---------------- */
+const state = {
+  authed:false,
+  records:[],           // {id,dni,ap_paterno,ap_materno,nombres,telefonos:[{numero,fecha,activo}],campos:{}, updated_at}
+  customFields:[],       // ["Cargo","Sede",...]
+  search:'',
+  editing:null,          // id del registro en edición (copia local)
+  supabase:null,         // cliente supabase-js si está configurado
+  supabaseReady:false,
+  supabaseUrl:'',
+  supabaseKey:'',
+};
+
+/* ---------------- Datos de demostración (modo local) ---------------- */
+function seedDemoData(){
+  const now = new Date().toISOString();
+  state.customFields = ['Cargo','I.E. / Sede'];
+  state.records = [
+    {id:crypto.randomUUID(), dni:'71234567', ap_paterno:'Quispe', ap_materno:'Rojas', nombres:'Maria Fernanda',
+      telefonos:[{numero:'987654321', fecha:now, activo:true}], campos:{'Cargo':'Docente','I.E. / Sede':'I.E. 1178'}, updated_at:now},
+    {id:crypto.randomUUID(), dni:'45678912', ap_paterno:'Huaman', ap_materno:'Torres', nombres:'Jose Luis',
+      telefonos:[{numero:'956123478', fecha:now, activo:true},{numero:'998877665', fecha:'2024-02-10T10:00:00.000Z', activo:false}],
+      campos:{'Cargo':'Director','I.E. / Sede':'I.E. 0123'}, updated_at:now},
+    {id:crypto.randomUUID(), dni:'80112233', ap_paterno:'Flores', ap_materno:'Mendoza', nombres:'Ana Lucia',
+      telefonos:[{numero:'912345678', fecha:now, activo:true}], campos:{'Cargo':'Auxiliar','I.E. / Sede':'I.E. 0456'}, updated_at:now},
+  ];
+}
+
+/* ---------------- Utilidades ---------------- */
+function toast(msg, type='ok'){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `${ic(type==='ok'?'check':type==='err'?'close':'inbox')}<span>${msg}</span>`;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3200);
+}
+function normalize(str){ return (str||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function fullName(r){ return `${r.nombres} ${r.ap_paterno} ${r.ap_materno}`; }
+function fmtDate(iso){ try{ return new Date(iso).toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'}); }catch(e){ return '—'; } }
+function activePhone(r){ const p = r.telefonos.find(t=>t.activo); return p ? p.numero : '—'; }
+function uuid(){ return crypto.randomUUID(); }
+
+/* ---------------- Render raíz ---------------- */
+function render(){
+  const root = document.getElementById('appShell');
+  root.innerHTML = state.authed ? renderApp() : renderLogin();
+  if(!state.authed){ bindLogin(); } else { bindApp(); }
+}
+
+/* ================= LOGIN ================= */
+function renderLogin(){
+  return `
+  <div class="login-wrap">
+    <div class="glass login-card">
+      <div class="brand-ring">${brandRingSVG()}</div>
+      <div class="brand-title display">BioSync <span style="color:var(--cyan)">UE305</span></div>
+      <div class="brand-sub">Sistema de acceso a información</div>
+      <form class="login-form" id="loginForm">
+        <div>
+          <label>Usuario</label>
+          <input type="text" id="loginUser" placeholder="USER01" autocomplete="username" required>
+        </div>
+        <div>
+          <label>Contraseña</label>
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" required>
+        </div>
+        <div class="login-error" id="loginError">Usuario o contraseña incorrectos.</div>
+        <button type="submit" class="btn btn-primary" style="justify-content:center; margin-top:4px;">
+          ${ic('lock')} Ingresar
+        </button>
+      </form>
+      <div class="login-hint">Acceso restringido · UGEL 305 · Uso institucional</div>
+    </div>
+  </div>`;
+}
+function bindLogin(){
+  document.getElementById('loginForm').addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const u = document.getElementById('loginUser').value.trim();
+    const p = document.getElementById('loginPass').value;
+    if(u === 'USER01' && p === 'UGEL2026'){
+      state.authed = true;
+      if(state.records.length === 0) seedDemoData();
+      render();
+      toast('Bienvenido a BioSync UE305','ok');
+    } else {
+      document.getElementById('loginError').classList.add('show');
+    }
+  });
+}
+function brandRingSVG(){
+  return `<svg viewBox="0 0 64 64">
+    <defs>
+      <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#5EEAD4"/><stop offset="100%" stop-color="#A78BFA"/>
+      </linearGradient>
+    </defs>
+    <g class="ring-spin">
+      <circle cx="32" cy="32" r="26" fill="none" stroke="url(#ringGrad)" stroke-width="3" stroke-dasharray="120 60" stroke-linecap="round"/>
+    </g>
+    <circle cx="32" cy="32" r="16" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.25)" stroke-width="1"/>
+    <path d="M25 33c1.5 3 3.8 4.5 7 4.5s5.5-1.5 7-4.5" stroke="#F3F5F9" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <circle cx="26.5" cy="27" r="1.6" fill="#F3F5F9"/>
+    <circle cx="37.5" cy="27" r="1.6" fill="#F3F5F9"/>
+  </svg>`;
+}
+
+/* ================= APP PRINCIPAL ================= */
+function renderApp(){
+  return `
+  <header class="topbar glass">
+    <div class="brand">
+      <div class="brand-ring">${brandRingSVG()}</div>
+      <div class="brand-text">
+        <div class="brand-title display">BioSync <span style="color:var(--cyan)">UE305</span></div>
+        <div class="brand-sub">Registro de identidad y contacto</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="status-pill glass-soft">
+        <span class="status-dot ${state.supabaseReady?'online':'offline'}"></span>
+        ${state.supabaseReady ? 'Sincronizado (Supabase)' : 'Modo local (demo)'}
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btnSettings">${ic('settings')} Base de datos</button>
+      <button class="btn btn-ghost btn-sm" id="btnImport">${ic('upload')} Importar Excel</button>
+      <button class="btn btn-primary btn-sm" id="btnAdd">${ic('plus')} Nuevo registro</button>
+      <button class="btn btn-ghost btn-sm" id="btnLogout">${ic('logout')}</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <div class="toolbar glass-soft">
+      <div class="search-box">
+        ${ic('search')}
+        <input type="text" id="searchInput" placeholder="Buscar por nombres, apellidos o DNI..." value="${state.search}">
+      </div>
+      <div class="toolbar-count">${filteredRecords().length} de ${state.records.length} registros</div>
+    </div>
+
+    <div class="glass records-panel">
+      ${renderTable()}
+    </div>
+  </main>
+
+  <footer class="app-footer">BioSync UE305 &middot; Acceso restringido a personal autorizado</footer>
+
+  ${renderRecordModal()}
+  ${renderSettingsModal()}
+  ${renderImportModal()}
+  <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" class="hidden">
+  `;
+}
+
+function filteredRecords(){
+  const q = normalize(state.search);
+  if(!q) return state.records;
+  return state.records.filter(r=>{
+    return normalize(r.dni).includes(q) ||
+           normalize(r.nombres).includes(q) ||
+           normalize(r.ap_paterno).includes(q) ||
+           normalize(r.ap_materno).includes(q) ||
+           normalize(fullName(r)).includes(q);
+  });
+}
+
+function renderTable(){
+  const list = filteredRecords();
+  if(list.length === 0){
+    return `<div class="empty-state">
+      ${ic('inbox')}
+      <div class="t1">Sin resultados</div>
+      <div>No hay registros que coincidan con tu búsqueda.</div>
+    </div>`;
+  }
+  const extraCols = state.customFields;
+  return `
+  <table>
+    <thead><tr>
+      <th>DNI</th><th>Nombre completo</th><th>Celular</th>${extraCols.map(c=>`<th>${c}</th>`).join('')}<th>Actualizado</th><th></th>
+    </tr></thead>
+    <tbody>
+      ${list.map(r=>`
+      <tr>
+        <td data-label="DNI"><span class="mono">${r.dni}</span></td>
+        <td data-label="Nombre" class="name-cell">
+          <div class="full-name">${r.nombres} ${r.ap_paterno} ${r.ap_materno}</div>
+        </td>
+        <td data-label="Celular">
+          <span class="phone-chip">${ic('phone')} ${activePhone(r)}</span>
+          ${r.telefonos.length>1?`<span class="phone-count">+${r.telefonos.length-1} hist.</span>`:''}
+        </td>
+        ${extraCols.map(c=>`<td data-label="${c}">${r.campos && r.campos[c] ? r.campos[c] : '<span style="color:var(--text-2)">—</span>'}</td>`).join('')}
+        <td data-label="Actualizado" style="color:var(--text-2); font-size:12px;">${fmtDate(r.updated_at)}</td>
+        <td>
+          <div class="row-actions">
+            <div class="icon-btn" data-edit="${r.id}" title="Editar">${ic('edit')}</div>
+            <div class="icon-btn" data-del="${r.id}" title="Eliminar">${ic('trash')}</div>
+          </div>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+/* ---------------- Modal: crear/editar registro ---------------- */
+function renderRecordModal(){
+  const r = state.editing;
+  const isNew = r && r.__isNew;
+  return `
+  <div class="modal-overlay" id="recordOverlay">
+    <div class="glass modal" id="recordModal">
+      ${r ? `
+      <div class="modal-header">
+        <div class="modal-title">${ic(isNew?'plus':'edit')} ${isNew?'Nuevo registro':'Editar registro'}</div>
+        <div class="icon-btn" id="closeRecordModal">${ic('close')}</div>
+      </div>
+
+      <div class="field-grid">
+        <div><label>Documento de identidad</label><input type="text" id="f_dni" value="${r.dni}" maxlength="15" placeholder="DNI / CE"></div>
+        <div></div>
+        <div><label>Apellido paterno</label><input type="text" id="f_apP" value="${r.ap_paterno}"></div>
+        <div><label>Apellido materno</label><input type="text" id="f_apM" value="${r.ap_materno}"></div>
+        <div class="field-full"><label>Nombres</label><input type="text" id="f_nombres" value="${r.nombres}"></div>
+      </div>
+
+      <div class="section-label">${ic('history')} Celulares e historial</div>
+      <div id="phoneList">
+        ${r.telefonos.map((t,i)=>`
+          <div class="phone-row" data-idx="${i}">
+            <input type="text" class="phoneNumInput" value="${t.numero}" data-idx="${i}">
+            <span class="badge ${t.activo?'badge-active':'badge-hist'}">${t.activo?'Actual':'Historial · '+fmtDate(t.fecha)}</span>
+            ${!t.activo?`<div class="icon-btn" data-setactive="${i}" title="Marcar como actual">${ic('check')}</div>`:''}
+            <div class="icon-btn" data-delphone="${i}" title="Eliminar">${ic('trash')}</div>
+          </div>`).join('')}
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btnAddPhone" style="margin-top:4px;">${ic('plus')} Agregar número</button>
+
+      <div class="section-label">${ic('layers')} Campos adicionales</div>
+      <div id="customFieldsArea">
+        ${state.customFields.map(c=>`
+          <div class="field-full" style="margin-bottom:10px;">
+            <label>${c}</label>
+            <input type="text" class="customFieldInput" data-field="${c}" value="${(r.campos&&r.campos[c])||''}">
+          </div>`).join('')}
+      </div>
+      <div class="custom-field-row">
+        <input type="text" id="newFieldName" placeholder="Nombre de nuevo campo (ej. Correo institucional)">
+        <button class="btn btn-ghost btn-sm" id="btnAddField">${ic('plus')} Agregar campo</button>
+      </div>
+
+      <div class="modal-footer">
+        <div style="font-size:11.5px; color:var(--text-2);">${isNew?'':'ID: '+r.id.slice(0,8)+'…'}</div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-ghost btn-sm" id="btnCancelRecord">Cancelar</button>
+          <button class="btn btn-primary btn-sm" id="btnSaveRecord">${ic('check')} Guardar cambios</button>
+        </div>
+      </div>
+      ` : ''}
+    </div>
+  </div>`;
+}
+
+/* ---------------- Modal: configuración Supabase ---------------- */
+function renderSettingsModal(){
+  return `
+  <div class="modal-overlay" id="settingsOverlay">
+    <div class="glass modal">
+      <div class="modal-header">
+        <div class="modal-title">${ic('cloudOk')} Conexión a Supabase</div>
+        <div class="icon-btn" id="closeSettingsModal">${ic('close')}</div>
+      </div>
+      <p style="font-size:13px; color:var(--text-1); line-height:1.6; margin-bottom:16px;">
+        Ingresa la URL y la clave <b>anon</b> de tu proyecto de Supabase para que este equipo
+        lea y escriba en la misma base de datos que el resto de máquinas, en tiempo real.
+        Mientras no configures esto, el sistema funciona en <b>modo local (demo)</b> solo en este navegador.
+      </p>
+      <div class="field-grid">
+        <div class="field-full"><label>Project URL</label><input type="text" id="sbUrl" placeholder="https://xxxxx.supabase.co" value="${state.supabaseUrl}"></div>
+        <div class="field-full"><label>Anon public key</label><input type="text" id="sbKey" placeholder="eyJhbGciOi..." value="${state.supabaseKey}"></div>
+      </div>
+      <div id="sbStatusMsg" style="font-size:12.5px; color:var(--text-2); margin-bottom:10px;"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm" id="btnHowTo">${ic('idcard')} Ver guía paso a paso</button>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-ghost btn-sm" id="closeSettingsModal2">Cerrar</button>
+          <button class="btn btn-primary btn-sm" id="btnConnectSupabase">${ic('cloudOk')} Conectar</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------------- Modal: importar Excel ---------------- */
+function renderImportModal(){
+  return `
+  <div class="modal-overlay" id="importOverlay">
+    <div class="glass modal">
+      <div class="modal-header">
+        <div class="modal-title">${ic('upload')} Importación masiva desde Excel</div>
+        <div class="icon-btn" id="closeImportModal">${ic('close')}</div>
+      </div>
+      <p style="font-size:13px; color:var(--text-1); line-height:1.6; margin-bottom:14px;">
+        El archivo debe tener columnas con encabezados similares a:
+        <span class="mono" style="color:var(--gold)">DNI, Apellido Paterno, Apellido Materno, Nombres, Celular</span>.
+        El sistema reconoce variaciones comunes de estos encabezados automáticamente.
+      </p>
+      <div id="importDropArea" class="glass-soft" style="padding:28px; text-align:center; border-style:dashed; cursor:pointer;">
+        ${ic('upload')}
+        <div style="margin-top:8px; font-weight:600;">Haz clic para seleccionar tu archivo .xlsx / .csv</div>
+        <div style="font-size:12px; color:var(--text-2); margin-top:4px;">o arrástralo aquí</div>
+      </div>
+      <div id="importPreview" style="margin-top:16px;"></div>
+      <div class="modal-footer" id="importFooter" style="display:none;">
+        <div id="importCount" style="font-size:12.5px; color:var(--text-2);"></div>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-ghost btn-sm" id="btnCancelImport">Cancelar</button>
+          <button class="btn btn-primary btn-sm" id="btnConfirmImport">${ic('check')} Importar registros</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ================= Bindings ================= */
+let pendingImportRows = [];
+
+function bindApp(){
+  document.getElementById('btnLogout').onclick = ()=>{ state.authed=false; render(); };
+  document.getElementById('searchInput').oninput = (e)=>{ state.search = e.target.value; rerenderTableOnly(); };
+  document.getElementById('btnAdd').onclick = ()=> openRecordModal(null);
+  document.getElementById('btnSettings').onclick = ()=> toggleOverlay('settingsOverlay', true);
+  document.getElementById('closeSettingsModal').onclick = ()=> toggleOverlay('settingsOverlay', false);
+  document.getElementById('closeSettingsModal2').onclick = ()=> toggleOverlay('settingsOverlay', false);
+  document.getElementById('btnConnectSupabase').onclick = connectSupabase;
+  document.getElementById('btnHowTo').onclick = ()=>{ toggleOverlay('settingsOverlay', false); showGuideToast(); };
+
+  document.getElementById('btnImport').onclick = ()=>{ pendingImportRows=[]; document.getElementById('importPreview').innerHTML=''; document.getElementById('importFooter').style.display='none'; toggleOverlay('importOverlay', true); };
+  document.getElementById('closeImportModal').onclick = ()=> toggleOverlay('importOverlay', false);
+  document.getElementById('btnCancelImport').onclick = ()=> toggleOverlay('importOverlay', false);
+  document.getElementById('importDropArea').onclick = ()=> document.getElementById('fileInput').click();
+  document.getElementById('fileInput').onchange = handleFileSelect;
+  document.getElementById('btnConfirmImport').onclick = confirmImport;
+
+  document.querySelectorAll('[data-edit]').forEach(el=> el.onclick = ()=> openRecordModal(el.dataset.edit));
+  document.querySelectorAll('[data-del]').forEach(el=> el.onclick = ()=> deleteRecord(el.dataset.del));
+
+  bindRecordModalIfOpen();
+}
+
+function toggleOverlay(id, show){
+  document.getElementById(id).classList.toggle('show', show);
+}
+
+function rerenderTableOnly(){
+  document.querySelector('.records-panel').innerHTML = renderTable();
+  document.querySelector('.toolbar-count').textContent = `${filteredRecords().length} de ${state.records.length} registros`;
+  document.querySelectorAll('[data-edit]').forEach(el=> el.onclick = ()=> openRecordModal(el.dataset.edit));
+  document.querySelectorAll('[data-del]').forEach(el=> el.onclick = ()=> deleteRecord(el.dataset.del));
+}
+
+/* ---------------- Registro: abrir / guardar / eliminar ---------------- */
+function openRecordModal(id){
+  if(id === null){
+    state.editing = { id:uuid(), dni:'', ap_paterno:'', ap_materno:'', nombres:'',
+      telefonos:[], campos:{}, updated_at:new Date().toISOString(), __isNew:true };
+  } else {
+    const orig = state.records.find(r=>r.id===id);
+    state.editing = JSON.parse(JSON.stringify(orig)); // copia profunda para editar sin afectar hasta guardar
+  }
+  document.getElementById('recordOverlay').outerHTML = renderRecordModal();
+  toggleOverlay('recordOverlay', true);
+  bindRecordModalIfOpen();
+}
+
+function bindRecordModalIfOpen(){
+  const overlay = document.getElementById('recordOverlay');
+  if(!overlay || !state.editing) return;
+  document.getElementById('closeRecordModal').onclick = closeRecordModal;
+  document.getElementById('btnCancelRecord').onclick = closeRecordModal;
+  document.getElementById('btnSaveRecord').onclick = saveRecordFromModal;
+  document.getElementById('btnAddPhone').onclick = ()=>{
+    state.editing.telefonos.forEach(t=> t.activo=false);
+    state.editing.telefonos.push({numero:'', fecha:new Date().toISOString(), activo:true});
+    refreshRecordModal();
+  };
+  document.querySelectorAll('[data-setactive]').forEach(el=>{
+    el.onclick = ()=>{
+      const idx = +el.dataset.setactive;
+      state.editing.telefonos.forEach((t,i)=> t.activo = (i===idx));
+      refreshRecordModal();
+    };
+  });
+  document.querySelectorAll('[data-delphone]').forEach(el=>{
+    el.onclick = ()=>{
+      const idx = +el.dataset.delphone;
+      state.editing.telefonos.splice(idx,1);
+      if(state.editing.telefonos.length && !state.editing.telefonos.some(t=>t.activo)){
+        state.editing.telefonos[0].activo = true;
+      }
+      refreshRecordModal();
+    };
+  });
+  document.getElementById('btnAddField').onclick = ()=>{
+    const input = document.getElementById('newFieldName');
+    const name = input.value.trim();
+    if(!name) return;
+    if(!state.customFields.includes(name)) state.customFields.push(name);
+    if(!state.editing.campos) state.editing.campos = {};
+    if(!(name in state.editing.campos)) state.editing.campos[name] = '';
+    refreshRecordModal();
+    toast(`Campo "${name}" agregado al sistema`, 'info');
+  };
+}
+
+function refreshRecordModal(){
+  document.getElementById('recordOverlay').outerHTML = renderRecordModal();
+  toggleOverlay('recordOverlay', true);
+  bindRecordModalIfOpen();
+}
+
+function closeRecordModal(){
+  state.editing = null;
+  toggleOverlay('recordOverlay', false);
+}
+
+async function saveRecordFromModal(){
+  const e = state.editing;
+  e.dni = document.getElementById('f_dni').value.trim();
+  e.ap_paterno = document.getElementById('f_apP').value.trim();
+  e.ap_materno = document.getElementById('f_apM').value.trim();
+  e.nombres = document.getElementById('f_nombres').value.trim();
+
+  document.querySelectorAll('.phoneNumInput').forEach(inp=>{
+    const idx = +inp.dataset.idx;
+    e.telefonos[idx].numero = inp.value.trim();
+  });
+  document.querySelectorAll('.customFieldInput').forEach(inp=>{
+    if(!e.campos) e.campos = {};
+    e.campos[inp.dataset.field] = inp.value;
+  });
+
+  if(!e.dni || !e.nombres || !e.ap_paterno){
+    toast('DNI, nombres y apellido paterno son obligatorios', 'err');
+    return;
+  }
+  e.updated_at = new Date().toISOString();
+  delete e.__isNew;
+
+  const existingIdx = state.records.findIndex(r=>r.id===e.id);
+  if(existingIdx >= 0){ state.records[existingIdx] = e; } else { state.records.push(e); }
+
+  if(state.supabaseReady){
+    await upsertRecordSupabase(e);
+  }
+
+  closeRecordModal();
+  rerenderTableOnly();
+  toast('Registro guardado correctamente', 'ok');
+}
+
+async function deleteRecord(id){
+  if(!confirm('¿Eliminar este registro permanentemente?')) return;
+  state.records = state.records.filter(r=>r.id!==id);
+  if(state.supabaseReady){ await deleteRecordSupabase(id); }
+  rerenderTableOnly();
+  toast('Registro eliminado', 'info');
+}
+
+/* ================= Importación Excel ================= */
+function handleFileSelect(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt)=>{
+    try{
+      const wb = XLSX.read(evt.target.result, {type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+      pendingImportRows = mapImportRows(rows);
+      renderImportPreview();
+    }catch(err){
+      toast('No se pudo leer el archivo. Verifica el formato.', 'err');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function findCol(row, aliases){
+  const keys = Object.keys(row);
+  for(const k of keys){
+    const nk = normalize(k).replace(/[^a-z0-9]/g,'');
+    for(const a of aliases){
+      if(nk.includes(a)) return row[k];
+    }
+  }
+  return '';
+}
+
+function mapImportRows(rows){
+  return rows.map(row=>({
+    dni: String(findCol(row, ['dni','documento','numerodocumento'])).trim(),
+    ap_paterno: String(findCol(row, ['apellidopaterno','apepaterno','paterno'])).trim(),
+    ap_materno: String(findCol(row, ['apellidomaterno','apematerno','materno'])).trim(),
+    nombres: String(findCol(row, ['nombres','nombre'])).trim(),
+    celular: String(findCol(row, ['celular','telefono','numero','movil'])).trim(),
+  })).filter(r=> r.dni || r.nombres);
+}
+
+function renderImportPreview(){
+  const box = document.getElementById('importPreview');
+  const footer = document.getElementById('importFooter');
+  if(pendingImportRows.length === 0){
+    box.innerHTML = `<div style="color:var(--danger); font-size:13px;">No se encontraron filas válidas en el archivo.</div>`;
+    footer.style.display='none';
+    return;
+  }
+  const sample = pendingImportRows.slice(0,5);
+  box.innerHTML = `
+    <div class="glass-soft" style="padding:12px; max-height:220px; overflow:auto;">
+      <table style="font-size:12.5px;">
+        <thead><tr><th>DNI</th><th>Ap. Paterno</th><th>Ap. Materno</th><th>Nombres</th><th>Celular</th></tr></thead>
+        <tbody>
+          ${sample.map(r=>`<tr><td>${r.dni}</td><td>${r.ap_paterno}</td><td>${r.ap_materno}</td><td>${r.nombres}</td><td>${r.celular}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  document.getElementById('importCount').textContent = `${pendingImportRows.length} registros detectados (mostrando ${sample.length})`;
+  footer.style.display='flex';
+}
+
+async function confirmImport(){
+  const now = new Date().toISOString();
+  const newRecords = pendingImportRows.map(r=>({
+    id:uuid(), dni:r.dni, ap_paterno:r.ap_paterno, ap_materno:r.ap_materno, nombres:r.nombres,
+    telefonos: r.celular ? [{numero:r.celular, fecha:now, activo:true}] : [],
+    campos:{}, updated_at:now,
+  }));
+  // Evita duplicar por DNI: si ya existe, agrega el celular al historial
+  newRecords.forEach(nr=>{
+    const existing = state.records.find(r=> r.dni === nr.dni && nr.dni!=='');
+    if(existing){
+      if(nr.telefonos[0] && !existing.telefonos.some(t=>t.numero===nr.telefonos[0].numero)){
+        existing.telefonos.forEach(t=>t.activo=false);
+        existing.telefonos.push(nr.telefonos[0]);
+      }
+      existing.updated_at = now;
+    } else {
+      state.records.push(nr);
+    }
+  });
+
+  if(state.supabaseReady){
+    for(const r of state.records) await upsertRecordSupabase(r);
+  }
+
+  toggleOverlay('importOverlay', false);
+  rerenderTableOnly();
+  toast(`Importación completada: ${newRecords.length} filas procesadas`, 'ok');
+}
+
+/* ================= Integración Supabase ================= */
+async function loadSupabaseSDK(){
+  if(window.supabase) return true;
+  return new Promise((resolve)=>{
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+    s.onload = ()=> resolve(true);
+    s.onerror = ()=> resolve(false);
+    document.head.appendChild(s);
+  });
+}
+
+async function connectSupabase(){
+  const url = document.getElementById('sbUrl').value.trim();
+  const key = document.getElementById('sbKey').value.trim();
+  const statusMsg = document.getElementById('sbStatusMsg');
+  if(!url || !key){ statusMsg.textContent = 'Ingresa la URL y la clave anon primero.'; statusMsg.style.color='var(--danger)'; return; }
+
+  statusMsg.textContent = 'Cargando cliente de Supabase...';
+  statusMsg.style.color = 'var(--text-2)';
+  const loaded = await loadSupabaseSDK();
+  if(!loaded || !window.supabase){
+    statusMsg.textContent = 'No se pudo cargar el SDK de Supabase desde este entorno de vista previa. Copia este archivo y ábrelo fuera de Claude (o despliégalo en Vercel/Netlify) para conectarlo a tu base real.';
+    statusMsg.style.color = 'var(--danger)';
+    return;
+  }
+  try{
+    state.supabase = window.supabase.createClient(url, key);
+    const {data, error} = await state.supabase.from('registros').select('*').limit(1);
+    if(error) throw error;
+    state.supabaseUrl = url; state.supabaseKey = key; state.supabaseReady = true;
+    statusMsg.textContent = 'Conectado correctamente ✓';
+    statusMsg.style.color = 'var(--cyan)';
+    await fetchAllFromSupabase();
+    subscribeRealtime();
+    render();
+    toast('Conectado a Supabase — sincronización en tiempo real activa', 'ok');
+  }catch(err){
+    statusMsg.textContent = 'Error al conectar: ' + (err.message || 'revisa la URL, la clave y que la tabla "registros" exista.');
+    statusMsg.style.color = 'var(--danger)';
+  }
+}
+
+async function fetchAllFromSupabase(){
+  const {data, error} = await state.supabase.from('registros').select('*').order('updated_at', {ascending:false});
+  if(error){ toast('Error al leer registros de Supabase', 'err'); return; }
+  state.records = (data||[]).map(rowToRecord);
+  const fieldSet = new Set(state.customFields);
+  state.records.forEach(r=> Object.keys(r.campos||{}).forEach(k=>fieldSet.add(k)));
+  state.customFields = Array.from(fieldSet);
+}
+function rowToRecord(row){
+  return {
+    id: row.id, dni: row.dni, ap_paterno: row.ap_paterno, ap_materno: row.ap_materno,
+    nombres: row.nombres, telefonos: row.telefonos || [], campos: row.campos || {},
+    updated_at: row.updated_at,
+  };
+}
+async function upsertRecordSupabase(r){
+  const {error} = await state.supabase.from('registros').upsert({
+    id:r.id, dni:r.dni, ap_paterno:r.ap_paterno, ap_materno:r.ap_materno, nombres:r.nombres,
+    telefonos:r.telefonos, campos:r.campos, updated_at:r.updated_at,
+  });
+  if(error) toast('Error al sincronizar con Supabase: '+error.message, 'err');
+}
+async function deleteRecordSupabase(id){
+  const {error} = await state.supabase.from('registros').delete().eq('id', id);
+  if(error) toast('Error al eliminar en Supabase: '+error.message, 'err');
+}
+function subscribeRealtime(){
+  if(!state.supabase) return;
+  state.supabase.channel('registros-realtime')
+    .on('postgres_changes', {event:'*', schema:'public', table:'registros'}, (payload)=>{
+      fetchAllFromSupabase().then(()=> rerenderTableOnly());
+    })
+    .subscribe();
+}
+
+function showGuideToast(){
+  toast('Guía paso a paso enviada en el chat de Claude ↴', 'info');
+}
+
+/* ================= Arranque ================= */
+render();
+</script>
+</body>
+</html>
